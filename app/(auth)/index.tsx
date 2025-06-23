@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Button } from '../components/Button';
+import { Button } from '../../components/Button';
 import Animated, {
     FadeIn,
     FadeInDown,

@@ -36,6 +36,7 @@ export default function RootLayout() {
         contentStyle: { backgroundColor: '#000' },
         animation: 'fade_from_bottom',
       }}>
+        <Stack.Screen name="(auth)" />
         <Stack.Screen name="index" />
         <Stack.Screen name="generate-mnemonic" />
         <Stack.Screen name="create-password" />

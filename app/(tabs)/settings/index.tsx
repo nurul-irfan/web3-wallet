@@ -22,7 +22,7 @@ export default function SettingsScreen() {
 
     const handleLogout = () => {
         // You can add logic here to clear user session or wallet state
-        router.replace('/');
+        router.replace('/(auth)');
 
     };
 
