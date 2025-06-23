@@ -25,13 +25,35 @@ export function getAddressFromMnemonic(mnemonic: string): string {
   return wallet.address;
 }
 
-export async function getWalletBalance(address: string): Promise<string> {
+// export async function getWalletBalance(address: string): Promise<string> {
+//   try {
+//     const provider = new ethers.JsonRpcProvider('https://polygon-amoy.infura.io/v3/eb4fdaf55eee452ba8dd80f7cb107ef0');
+//     const balance = await provider.getBalance(address);
+//     return ethers.formatEther(balance); // returns string for precision
+//   } catch (error) {
+//     console.error('Error getting balance:', error);
+//     return '0';
+//   }
+// }
+
+export async function getWalletBalance(address: string, rpcUrl: string): Promise<string> {
   try {
-    const provider = new ethers.JsonRpcProvider('https://polygon-amoy.infura.io/v3/eb4fdaf55eee452ba8dd80f7cb107ef0');
+    const provider = new ethers.JsonRpcProvider(rpcUrl);
     const balance = await provider.getBalance(address);
-    return ethers.formatEther(balance); // returns string for precision
+    return ethers.formatEther(balance); // Return in ETH/MATIC/etc.
   } catch (error) {
-    console.error('Error getting balance:', error);
+    console.error(`Error getting balance for ${rpcUrl}:`, error);
     return '0';
   }
 }
+
+
+
+// for testing 
+
+
+// (async () => {
+//   const address = '0xff83C584bb4F99A6e2695a615D6364216D175522'; // Replace with a real wallet address
+//   const balance = await getWalletBalance(address);
+//   console.log(`Wallet MATIC Balance: ${balance} MATIC`);
+// })();

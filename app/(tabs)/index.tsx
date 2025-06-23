@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -14,11 +14,8 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 import { ArrowUp, ArrowUpDown, Layers, ChevronDown } from 'lucide-react-native';
 import { LineChart } from 'react-native-chart-kit';
 import { router } from 'expo-router';
+import { getWalletBalance } from '../../utils/wallet';
 
-interface Chain {
-  name: string;
-  icon: string;
-}
 
 interface Action {
   name: string;
@@ -37,14 +34,34 @@ interface Asset {
   network: string;
 }
 
+interface Chain {
+  name: string;
+  icon: string;
+  rpcUrl: string;
+  symbol: string; // Native token symbol (e.g., ETH, MATIC)
+}
+
 const chains: Chain[] = [
-  { name: 'All Chains', icon: 'https://assets.coingecko.com/coins/images/279/small/etheereum.png' },
-  { name: 'Ethereum', icon: 'https://assets.coingecko.com/coins/images/279/small/ethereum.png' },
-  { name: 'BSC', icon: 'https://assets.coingecko.com/coins/images/825/small/binance-coin-logo.png' },
-  { name: 'Polygon', icon: 'https://assets.coingecko.com/coins/images/4713/small/matic-token-icon.png' },
-  { name: 'Arbitrum', icon: 'https://assets.coingecko.com/coins/images/4213/small/arbitrum-logo-icon.png' },
-  { name: 'Optimism', icon: 'https://assets.coingecko.com/coins/images/25244/small/OP_Token_Logo.png' },
+  {
+    name: 'Ethereum',
+    icon: 'https://assets.coingecko.com/coins/images/279/small/ethereum.png',
+    rpcUrl: 'https://sepolia.infura.io/v3/f0309636a71c4936a1ad664486b7dc12',
+    symbol: 'ETH',
+  },
+  {
+    name: 'Polygon',
+    icon: 'https://assets.coingecko.com/coins/images/4713/small/matic-token-icon.png',
+    rpcUrl: 'https://polygon-mainnet.infura.io/v3/f0309636a71c4936a1ad664486b7dc12',
+    symbol: 'MATIC',
+  },
+  {
+    name: 'BSC',
+    icon: 'https://assets.coingecko.com/coins/images/825/small/binance-coin-logo.png',
+    rpcUrl: 'https://bsc-mainnet.infura.io/v3/f0309636a71c4936a1ad664486b7dc12',
+    symbol: 'BNB',
+  },
 ];
+
 
 const actions: Action[] = [
   { name: 'SOL', symbol: 'SOL  ->', type: 'Sell', icon: 'https://assets.coingecko.com/coins/images/4128/small/Solana.png' },
@@ -93,11 +110,21 @@ const mockAssets: Asset[] = [
 
 export default function WalletScreen() {
   const { wallet } = useAppContext();
-  const [totalValue] = useState(19981.13);
+  const [chainBalances, setChainBalances] = useState<{ [key: string]: string }>({});
+  const totalValue = Object.values(chainBalances).reduce(
+    (acc, val) => acc + parseFloat(val || '0'),
+    0
+  );
+
+  // const totalValue = parseFloat(walletBalance) || 0;
   const [totalChange] = useState({ percent: 8.32, value: 775.42 });
   const [selectedTab, setSelectedTab] = useState('Assets');
   const [modalVisible, setModalVisible] = useState(false);
-  const [selectedChain, setSelectedChain] = useState<Chain | null>(null);
+  const [selectedChain, setSelectedChain] = useState<Chain>(chains[0]);
+  // const [chainBalances, setChainBalances] = useState<{ [key: string]: string }>({});
+
+
+
 
   const chartData = {
     labels: ['', '', '', '', '', ''],
@@ -114,6 +141,27 @@ export default function WalletScreen() {
 
 
   const screenWidth = Dimensions.get('window').width;
+
+
+  useEffect(() => {
+    const fetchBalances = async () => {
+      if (!wallet?.address) return;
+
+      const balances: { [key: string]: string } = {};
+
+      await Promise.all(
+        chains.map(async (chain) => {
+          const balance = await getWalletBalance(wallet.address, chain.rpcUrl);
+          balances[chain.name] = balance;
+        })
+      );
+
+      setChainBalances(balances);
+    };
+
+    fetchBalances();
+  }, [wallet]);
+
 
 
   return (
@@ -149,6 +197,23 @@ export default function WalletScreen() {
           <Text style={styles.totalValue}>
             ${totalValue.toLocaleString('en-US', { minimumFractionDigits: 2 })}
           </Text>
+          {selectedChain ? (
+            <View style={{ flexDirection: 'row', justifyContent: 'center', marginBottom: 4 }}>
+              <Image source={{ uri: selectedChain.icon }} style={{ width: 18, height: 18, marginRight: 6 }} />
+              <Text style={{ color: '#fff', fontSize: 14 }}>
+                {chainBalances[selectedChain.name] || '...'} {selectedChain.symbol}
+              </Text>
+            </View>
+          ) : (
+            chains.map((chain) => (
+              <View key={chain.name} style={{ flexDirection: 'row', justifyContent: 'center', marginBottom: 4 }}>
+                <Image source={{ uri: chain.icon }} style={{ width: 18, height: 18, marginRight: 6 }} />
+                <Text style={{ color: '#fff', fontSize: 14 }}>
+                  {chainBalances[chain.name] || '...'} {chain.symbol}
+                </Text>
+              </View>
+            ))
+          )}
           <View style={styles.changeContainer}>
             <Text style={[styles.changeText, { color: '#1FE15E' }]}>
               +{totalChange.percent}%
@@ -158,6 +223,7 @@ export default function WalletScreen() {
             </Text>
           </View>
         </View>
+
 
         {/* Chart */}
         <LineChart
@@ -340,32 +406,41 @@ export default function WalletScreen() {
       </Animated.View>
 
       {/* Asset List */}
-      <View style={styles.assetsList}>
-        {mockAssets.map((asset, index) => (
-          <View key={index} style={styles.assetItem}>
-            <View style={styles.assetInfo}>
-              <Image source={{ uri: asset.icon }} style={styles.assetIcon} />
-              <View>
-                <Text style={styles.assetName}>{asset.name}</Text>
-                <Text style={styles.assetDetails}>
-                  {asset.amount} {asset.symbol} ({asset.network})
+      {selectedTab === 'Assets' &&
+        <View style={styles.assetsList}>
+          {mockAssets.map((asset, index) => (
+            <View key={index} style={styles.assetItem}>
+              <View style={styles.assetInfo}>
+                <Image source={{ uri: asset.icon }} style={styles.assetIcon} />
+                <View>
+                  <Text style={styles.assetName}>{asset.name}</Text>
+                  <Text style={styles.assetDetails}>
+                    {asset.amount} {asset.symbol} ({asset.network})
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.assetValue}>
+                <Text style={styles.assetValueText}>
+                  ${asset.value.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                </Text>
+                <Text style={[
+                  styles.assetChange,
+                  { color: asset.change >= 0 ? '#1FE15E' : '#FF5252' }
+                ]}>
+                  {asset.change >= 0 ? '+' : ''}{asset.change}%
                 </Text>
               </View>
             </View>
-            <View style={styles.assetValue}>
-              <Text style={styles.assetValueText}>
-                ${asset.value.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-              </Text>
-              <Text style={[
-                styles.assetChange,
-                { color: asset.change >= 0 ? '#1FE15E' : '#FF5252' }
-              ]}>
-                {asset.change >= 0 ? '+' : ''}{asset.change}%
-              </Text>
-            </View>
-          </View>
-        ))}
-      </View>
+          ))}
+        </View>
+      }
+
+      {selectedTab === 'NFTs' &&
+        <View>
+          <Text style={styles.assetName}>Coming Soon</Text>
+        </View>
+
+      }
     </ScrollView>
   );
 }

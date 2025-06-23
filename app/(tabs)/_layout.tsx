@@ -3,20 +3,28 @@ import { Tabs } from 'expo-router';
 import { Wallet, Settings, Globe } from 'lucide-react-native'; // Globe icon for browser
 import { useAppContext } from '../../context/AppContext';
 
+import { useNavigationState } from '@react-navigation/native'; // 👈
+
 export default function TabLayout() {
   const { isAuthenticated } = useAppContext();
+
+  const state = useNavigationState((state) => state);
+  const currentRouteName = state?.routes?.[state.index]?.name;
+  const isBrowser = currentRouteName === 'browser';
 
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarStyle: {
-          backgroundColor: '#121212',
-          borderTopWidth: 0,
-          elevation: 0,
-          height: 60,
-          paddingBottom: 10,
-        },
+        tabBarStyle: isBrowser
+          ? { display: 'none' } // 👈 Hide tab bar on browser screen
+          : {
+              backgroundColor: '#121212',
+              borderTopWidth: 0,
+              elevation: 0,
+              height: 60,
+              paddingBottom: 10,
+            },
         tabBarActiveTintColor: '#1FE15E',
         tabBarInactiveTintColor: '#808080',
         tabBarLabelStyle: {

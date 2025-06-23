@@ -11,22 +11,23 @@ export default function GenerateMnemonicScreen() {
   const router = useRouter();
   const { setWallet, storeMnemonic } = useAppContext();
   const [mnemonic, setMnemonic] = useState<string[]>([]);
-  
+
   useEffect(() => {
     const init = async () => {
       const newMnemonic = await generateMnemonic();
       setMnemonic(newMnemonic.split(' '));
-  
+
       storeMnemonic(newMnemonic);
       setWallet({
         address: '',
         mnemonic: newMnemonic,
+        account: undefined
       });
     };
-  
+
     init();
   }, []);
-  
+
 
   const handleContinue = () => {
     router.push('/create-password');
@@ -37,7 +38,7 @@ export default function GenerateMnemonicScreen() {
   };
 
   return (
-    <ScrollView 
+    <ScrollView
       style={styles.container}
       contentContainerStyle={styles.contentContainer}
     >
@@ -46,9 +47,9 @@ export default function GenerateMnemonicScreen() {
         <Text style={styles.subtitle}>
           We've generated a unique 12-word recovery phrase for your wallet.
         </Text>
-        
+
         <MnemonicDisplay mnemonic={mnemonic} />
-        
+
         <View style={styles.warningContainer}>
           <Text style={styles.warningTitle}>Important:</Text>
           <Text style={styles.warningText}>
@@ -57,15 +58,15 @@ export default function GenerateMnemonicScreen() {
             • If you lose your recovery phrase, you'll lose access to your wallet
           </Text>
         </View>
-        
+
         <View style={styles.buttonContainer}>
-          <Button 
-            title="Continue" 
+          <Button
+            title="Continue"
             onPress={handleContinue}
-            style={styles.continueButton} 
+            style={styles.continueButton}
           />
-          <Button 
-            title="Back" 
+          <Button
+            title="Back"
             variant="outline"
             onPress={handleBack}
             style={styles.backButton}

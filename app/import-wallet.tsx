@@ -10,7 +10,7 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 export default function ImportWalletScreen() {
   const router = useRouter();
   const { setWallet, storeMnemonic, storePassword } = useAppContext();
-  
+
   const [mnemonic, setMnemonic] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -18,67 +18,68 @@ export default function ImportWalletScreen() {
   const [passwordError, setPasswordError] = useState('');
   const [confirmError, setConfirmError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  
+
   const validatePassword = (pass: string) => {
     if (pass.length < 8) {
       return 'Password must be at least 8 characters';
     }
     return '';
   };
-  
+
   const handleImportWallet = async () => {
     // Validate mnemonic
     if (!mnemonic.trim()) {
       setMnemonicError('Recovery phrase is required');
       return;
     }
-    
+
     const trimmedMnemonic = mnemonic.trim();
     const words = trimmedMnemonic.split(/\s+/);
-    
+
     if (words.length !== 12) {
       setMnemonicError('Recovery phrase must be 12 words');
       return;
     }
-    
+
     if (!validateMnemonic(trimmedMnemonic)) {
       setMnemonicError('Invalid recovery phrase');
       return;
     } else {
       setMnemonicError('');
     }
-    
+
     // Validate password
     const passError = validatePassword(password);
     setPasswordError(passError);
-    
+
     // Validate password confirmation
     let confirmError = '';
     if (password !== confirmPassword) {
       confirmError = 'Passwords do not match';
     }
     setConfirmError(confirmError);
-    
+
     // If there are any errors, don't proceed
     if (passError || confirmError) {
       return;
     }
-    
+
     setIsLoading(true);
-    
+
     try {
       // Store mnemonic and password securely
       await storeMnemonic(trimmedMnemonic);
       await storePassword(password);
-      
+
       // Get address from mnemonic
       const address = getAddressFromMnemonic(trimmedMnemonic);
-      
+
       // Update wallet in context
       setWallet({
         address,
+        account: undefined
       });
-      
+
       // Navigate to wallet screen
       router.replace('/(tabs)');
     } catch (error) {
@@ -87,13 +88,13 @@ export default function ImportWalletScreen() {
       setIsLoading(false);
     }
   };
-  
+
   const handleBack = () => {
     router.back();
   };
 
   return (
-    <ScrollView 
+    <ScrollView
       style={styles.container}
       contentContainerStyle={styles.contentContainer}
     >
@@ -102,7 +103,7 @@ export default function ImportWalletScreen() {
         <Text style={styles.subtitle}>
           Enter your 12-word recovery phrase to import your existing wallet.
         </Text>
-        
+
         <View style={styles.formContainer}>
           <Text style={styles.mnemonicLabel}>Recovery Phrase</Text>
           <View style={[styles.mnemonicInput, mnemonicError ? styles.mnemonicInputError : null]}>
@@ -119,7 +120,7 @@ export default function ImportWalletScreen() {
             />
           </View>
           {mnemonicError ? <Text style={styles.errorText}>{mnemonicError}</Text> : null}
-          
+
           <View style={styles.passwordSection}>
             <TextInputField
               label="Password"
@@ -129,7 +130,7 @@ export default function ImportWalletScreen() {
               isPassword
               error={passwordError}
             />
-            
+
             <TextInputField
               label="Confirm Password"
               placeholder="Confirm your password"
@@ -140,22 +141,22 @@ export default function ImportWalletScreen() {
             />
           </View>
         </View>
-        
+
         <View style={styles.infoContainer}>
           <Text style={styles.infoText}>
             Make sure you're entering your recovery phrase in a secure, private environment. Never share your recovery phrase with anyone.
           </Text>
         </View>
-        
+
         <View style={styles.buttonContainer}>
-          <Button 
-            title="Import Wallet" 
+          <Button
+            title="Import Wallet"
             onPress={handleImportWallet}
             style={styles.importButton}
             isLoading={isLoading}
           />
-          <Button 
-            title="Back" 
+          <Button
+            title="Back"
             variant="outline"
             onPress={handleBack}
             style={styles.backButton}
